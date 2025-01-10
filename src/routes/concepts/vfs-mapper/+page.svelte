@@ -1,6 +1,8 @@
 <script>
     import { goto } from '$app/navigation';
     import { fade, slide } from 'svelte/transition';
+    import { spring } from 'svelte/motion';
+    import { quintOut } from 'svelte/easing';
     
     // VFS Layer definitions
     const vfsLayers = [
@@ -24,9 +26,12 @@
         }
     ];
 
-    // File operation simulation
+    // Enhanced file operation simulation
     let currentOperation = null;
+    let operationPath = [];
     let activeLayer = null;
+    let draggedFile = null;
+    let systemCallQueue = [];
     
     // Sample files for different filesystems
     let files = {
@@ -44,11 +49,90 @@
         ]
     };
 
-    // Simulate operation flow
-    function simulateOperation(operation) {
+    // Operation translation map
+    const operationTranslations = {
+        'open()': {
+            'ext4': 'ext4_open()',
+            'NTFS': 'ntfs_open()',
+            'FAT32': 'fat32_open()',
+            'XFS': 'xfs_open()'
+        },
+        'read()': {
+            'ext4': 'ext4_read()',
+            'NTFS': 'ntfs_read()',
+            'FAT32': 'fat32_read()',
+            'XFS': 'xfs_read()'
+        }
+        // ...add more operations
+    };
+
+    // Enhanced simulation with path tracking
+    function simulateOperation(operation, fileSystem = 'ext4') {
         currentOperation = operation;
-        // Animation would show operation flowing through layers
-        setTimeout(() => currentOperation = null, 2000);
+        operationPath = [];
+        
+        // Simulate operation flow through layers
+        const steps = [
+            { layer: 0, translation: operation },
+            { layer: 1, translation: `vfs_${operation}` },
+            { layer: 2, translation: operationTranslations[operation]?.[fileSystem] || operation }
+        ];
+
+        steps.forEach((step, index) => {
+            setTimeout(() => {
+                operationPath = [...operationPath, step];
+            }, index * 800);
+        });
+
+        // Reset after animation
+        setTimeout(() => {
+            currentOperation = null;
+            operationPath = [];
+        }, steps.length * 800);
+    }
+
+    // Drag and drop handling
+    function handleDragStart(file, fs) {
+        draggedFile = { ...file, fileSystem: fs };
+    }
+
+    function handleDragOver(event, layer) {
+        event.preventDefault();
+        activeLayer = layer;
+    }
+
+    function handleDrop(event, layer) {
+        event.preventDefault();
+        if (draggedFile) {
+            // Simulate file operation based on layer
+            simulateOperation('open()', draggedFile.fileSystem);
+            // Add to system call queue
+            systemCallQueue = [...systemCallQueue, {
+                operation: 'open()',
+                file: draggedFile.name,
+                fileSystem: draggedFile.fileSystem,
+                timestamp: new Date()
+            }];
+        }
+        draggedFile = null;
+        activeLayer = null;
+    }
+
+    // System call queue management
+    function removeFromQueue(index) {
+        systemCallQueue = systemCallQueue.filter((_, i) => i !== index);
+    }
+
+    // Animation coordinates
+    const coords = spring({ x: 0, y: 0 }, {
+        stiffness: 0.1,
+        damping: 0.25
+    });
+
+    function updateCoords(event) {
+        if (draggedFile) {
+            coords.set({ x: event.clientX, y: event.clientY });
+        }
     }
 
     // Get icon for file type
@@ -65,7 +149,8 @@
     }
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 p-4 md:p-8">
+<div class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 p-4 md:p-8"
+     on:mousemove={updateCoords}>
     <button
         on:click={() => goto('/concepts')}
         class="mb-8 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 
@@ -85,11 +170,14 @@
 
         <!-- VFS Layer Visualization -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Layers Panel -->
+            <!-- Enhanced Layers Panel -->
             <div class="lg:col-span-8 space-y-4">
                 {#each vfsLayers as layer, i}
                     <div 
-                        class="bg-gradient-to-r {layer.color} p-6 rounded-xl shadow-md"
+                        class="bg-gradient-to-r {layer.color} p-6 rounded-xl shadow-md 
+                               {activeLayer === layer ? 'ring-2 ring-indigo-500' : ''}"
+                        on:dragover={(e) => handleDragOver(e, layer)}
+                        on:drop={(e) => handleDrop(e, layer)}
                         on:mouseenter={() => activeLayer = layer}
                         on:mouseleave={() => activeLayer = null}
                         transition:slide
@@ -122,33 +210,66 @@
                                 {/each}
                             </div>
                         {/if}
+
+                        <!-- Operation Path Visualization -->
+                        {#if operationPath.some(p => p.layer === i)}
+                            <div class="mt-4 bg-white/30 p-2 rounded-lg" 
+                                 transition:slide>
+                                {operationPath.find(p => p.layer === i).translation}
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             </div>
 
-            <!-- File Browser Panel -->
-            <div class="lg:col-span-4 bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">File Browser</h2>
-                
-                {#each Object.entries(files) as [fs, fileList]}
-                    <div class="mb-6">
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">{fs}</h3>
-                        <div class="space-y-2">
-                            {#each fileList as file}
-                                <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d={getFileIcon(file.type)} />
-                                    </svg>
-                                    <div>
-                                        <div class="text-sm font-medium">{file.name}</div>
-                                        <div class="text-xs text-gray-500">{file.size}</div>
+            <!-- Enhanced File Browser Panel -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">File Browser</h2>
+                    
+                    {#each Object.entries(files) as [fs, fileList]}
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-500 mb-2">{fs}</h3>
+                            <div class="space-y-2">
+                                {#each fileList as file}
+                                    <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg
+                                                cursor-grab active:cursor-grabbing"
+                                         draggable="true"
+                                         on:dragstart={() => handleDragStart(file, fs)}>
+                                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d={getFileIcon(file.type)} />
+                                        </svg>
+                                        <div>
+                                            <div class="text-sm font-medium">{file.name}</div>
+                                            <div class="text-xs text-gray-500">{file.size}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            {/each}
+                                {/each}
+                            </div>
                         </div>
+                    {/each}
+                </div>
+
+                <!-- System Call Queue -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">System Call Queue</h2>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        {#each systemCallQueue as call, i}
+                            <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-sm"
+                                 transition:slide|local>
+                                <div>
+                                    <span class="font-medium">{call.operation}</span>
+                                    <span class="text-gray-500">({call.file})</span>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600"
+                                        on:click={() => removeFromQueue(i)}>
+                                    ×
+                                </button>
+                            </div>
+                        {/each}
                     </div>
-                {/each}
+                </div>
             </div>
         </div>
 
@@ -160,6 +281,14 @@
             </div>
         {/if}
     </div>
+
+    <!-- Dragged File Preview -->
+    {#if draggedFile}
+        <div class="fixed pointer-events-none z-50 bg-white p-2 rounded-lg shadow-lg"
+             style="transform: translate({$coords.x + 10}px, {$coords.y + 10}px)">
+            <div class="text-sm font-medium">{draggedFile.name}</div>
+        </div>
+    {/if}
 </div>
 
 <style>
