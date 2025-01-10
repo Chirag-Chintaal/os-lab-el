@@ -25,7 +25,7 @@
 			<!-- Card 1: File Allocation -->
 			<div
 				class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:scale-105 cursor-pointer"
-				on:click={() => goto('/concepts/file_allocation')}
+				on:click={() => goto('/concepts/file-allocation')}
 			>
 				<h3 class="text-xl font-bold mb-4 text-yellow-800">File Allocation</h3>
 				<p class="text-gray-700">
@@ -36,7 +36,7 @@
 			<!-- Card 2: Directory Structures -->
 			<div
 				class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:scale-105 cursor-pointer"
-				on:click={() => goto('/concepts/directory_structures')}
+				on:click={() => goto('/concepts/directory-structures')}
 			>
 				<h3 class="text-xl font-bold mb-4 text-green-800">Directory Structures</h3>
 				<p class="text-gray-700">
@@ -47,7 +47,7 @@
 			<!-- Card 3: File Metadata -->
 			<div
 				class="bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow transform hover:scale-105 cursor-pointer"
-				on:click={() => goto('/concepts/file_metadata')}
+				on:click={() => goto('/concepts/file-metadata')}
 			>
 				<h3 class="text-xl font-bold mb-4 text-pink-800">File Metadata</h3>
 				<p class="text-gray-700">
