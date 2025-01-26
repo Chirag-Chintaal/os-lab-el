@@ -108,7 +108,75 @@
     }
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-cyan-100 via-blue-50 to-purple-100 p-4 md:p-8">
+<style>
+    /* Ensure proper sizing */
+    svg {
+        width: auto !important;
+        height: auto !important;
+        max-width: 2rem;
+        max-height: 2rem;
+    }
+
+    /* Smooth transitions */
+    button, div {
+        @apply transition-all duration-200;
+    }
+
+    .top-bar {
+        background-color: #1e3a8a;
+        color: white;
+        padding: 0.5rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .name {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .name:hover .info-card {
+        display: block;
+    }
+
+    .info-card {
+        display: none;
+        position: absolute;
+        top: 2rem;
+        left: 0;
+        background-color: white;
+        color: black;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+    }
+</style>
+
+<div class="top-bar">
+    <div class="name">
+        CHIRAG CHINTAAL 1RV23CS076
+        <div class="info-card">
+            <p>Chirag Chintaal</p>
+            <p>1RV23CS076</p>
+            <p>Student at RV College of Engineering</p>
+        </div>
+    </div>
+    <div class="name">
+        CHETAN M PATIL 1RV23CS074
+        <div class="info-card">
+            <p>Chetan M Patil</p>
+            <p>1RV23CS074</p>
+            <p>Student at RV College of Engineering</p>
+        </div>
+    </div>
+    <div>
+        Professor Dr. VEENA GADAD
+    </div>
+</div>
+
+<div class="p-4 md:p-8">
     <button
         on:click={() => goto('/concepts')}
         class="mb-8 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
@@ -245,18 +313,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Ensure proper sizing */
-    svg {
-        width: auto !important;
-        height: auto !important;
-        max-width: 2rem;
-        max-height: 2rem;
-    }
-
-    /* Smooth transitions */
-    button, div {
-        @apply transition-all duration-200;
-    }
-</style>
